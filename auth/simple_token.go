@@ -60,19 +60,23 @@ func (tm *simpleTokenTTLKeeper) stop() {
 
 func (tm *simpleTokenTTLKeeper) addSimpleToken(token string) {
 	tm.tokens[token] = time.Now().Add(tm.simpleTokenTTL)
+        plog.Infof("===WayneLogging===: addSimpleToken %s", token)
 }
 
 func (tm *simpleTokenTTLKeeper) resetSimpleToken(token string) {
 	if _, ok := tm.tokens[token]; ok {
 		tm.tokens[token] = time.Now().Add(tm.simpleTokenTTL)
+                plog.Infof("===WayneLogging===: resetSimpleToken %s", token)
 	}
 }
 
 func (tm *simpleTokenTTLKeeper) deleteSimpleToken(token string) {
 	delete(tm.tokens, token)
+        plog.Infof("===WayneLogging===: deleteSimpleToken %s", token)
 }
 
 func (tm *simpleTokenTTLKeeper) run() {
+        plog.Infof("===WayneLogging===: simpleTokenTTLKeeper start run")
 	tokenTicker := time.NewTicker(simpleTokenTTLResolution)
 	defer func() {
 		tokenTicker.Stop()
@@ -81,10 +85,13 @@ func (tm *simpleTokenTTLKeeper) run() {
 	for {
 		select {
 		case <-tokenTicker.C:
+                        plog.Infof("===WayneLogging===: simpleTokenTTLKeeper-Ticker")
 			nowtime := time.Now()
 			tm.mu.Lock()
 			for t, tokenendtime := range tm.tokens {
+                                plog.Infof("===WayneLogging===: simpleTokenTTLKeeper-Ticker: token %s, tokenEndTime: %v", t, tokenendtime)
 				if nowtime.After(tokenendtime) {
+                                        plog.Infof("===WayneLogging===: delete token %s because tokenEndTime %v is ahead of nowtime %v", t, tokenendtime, nowtime)
 					tm.deleteTokenFunc(t)
 					delete(tm.tokens, t)
 				}
@@ -142,6 +149,7 @@ func (t *tokenSimple) assignSimpleTokenToUser(username, token string) {
 
 	t.simpleTokens[token] = username
 	t.simpleTokenKeeper.addSimpleToken(token)
+        plog.Infof("===WayneLogging===: assigned token %s to user %s", token, username)
 }
 
 func (t *tokenSimple) invalidateUser(username string) {
@@ -164,8 +172,10 @@ func (t *tokenSimple) enable() {
 	}
 
 	delf := func(tk string) {
+                plog.Infof("===WayneLogging===: Entering delf")
 		if username, ok := t.simpleTokens[tk]; ok {
 			if t.lg != nil {
+                                plog.Infof("===WayneLogging===: logger is not nil")
 				t.lg.Info(
 					"deleted a simple token",
 					zap.String("user-name", username),
@@ -175,6 +185,7 @@ func (t *tokenSimple) enable() {
 				plog.Infof("deleting token %s for user %s", tk, username)
 			}
 			delete(t.simpleTokens, tk)
+                        plog.Infof("===WayneLogging===: in delf: token deleted")
 		}
 	}
 	t.simpleTokenKeeper = &simpleTokenTTLKeeper{

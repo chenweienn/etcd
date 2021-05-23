@@ -1415,6 +1415,7 @@ func (as *authStore) WithRoot(ctx context.Context) context.Context {
 	}
 
 	token, err := as.tokenProvider.assign(ctxForAssign, "root", as.Revision())
+        plog.Infof("===WayneLogging===: WithRoot: assigned token %s to root", token)
 	if err != nil {
 		// this must not happen
 		if as.lg != nil {
